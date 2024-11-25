@@ -82,10 +82,11 @@ const AllCommentsTabVirtualizedComments: FunctionComponent<Props> = ({
     const commentsOnLoad = { length: comments.length, hasMore };
     const commentsOnLoadLessThanInitialComments =
       commentsOnLoad.length < NUM_INITIAL_COMMENTS;
+
     return commentsOnLoadLessThanInitialComments
       ? false
       : commentsOnLoad.hasMore;
-  }, []);
+  }, [hasMore]); // watching for changes on hasMore to determine whether the Load More button should render
 
   // We determine whether to display the Load all comments button based on whether:
   // 1. If there are more comments to display than 20 AND fewer than 20 weren't initially loaded.
@@ -169,13 +170,13 @@ const AllCommentsTabVirtualizedComments: FunctionComponent<Props> = ({
             id={
               loadAllButtonDisabled
                 ? "comments-loadAll-loading"
-                : "comments-loadAll"
+                : "comments-loadMore"
             }
           >
             <Button
               key={`comments-loadAll-${comments.length}`}
               id="comments-loadAll"
-              onClick={onDisplayLoadAllButtonClick}
+              onClick={loadMoreAndEmit}
               color="secondary"
               variant="outlined"
               fullWidth
@@ -189,7 +190,7 @@ const AllCommentsTabVirtualizedComments: FunctionComponent<Props> = ({
               data-key-stop
               data-is-load-more
             >
-              Load All Comments
+              Load More
             </Button>
           </Localized>
         )}
@@ -222,11 +223,7 @@ const AllCommentsTabVirtualizedComments: FunctionComponent<Props> = ({
           top: increaseViewportBy,
           bottom: increaseViewportBy,
         }}
-        totalCount={
-          displayLoadAllButton
-            ? NUM_INITIAL_COMMENTS + newCommentsLength
-            : comments.length
-        }
+        totalCount={comments.length} // always render new comments as they get returned from GraphQL
         overscan={overscan}
         itemContent={useCallback(
           (index: number) => {

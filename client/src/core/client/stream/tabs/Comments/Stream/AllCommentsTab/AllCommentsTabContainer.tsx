@@ -244,18 +244,12 @@ export const AllCommentsTabContainer: FunctionComponent<Props> = ({
   );
 
   const commentSeenEnabled = useCommentSeenEnabled();
-  const [loadMore, isLoadingMore] = useLoadMore(relay, 99999);
+  // calling loadMore will query GraphQL for 20 more comments
+  const [loadMore, isLoadingMore] = useLoadMore(relay, 20); // 99999 instead of 20 will effectively load all remaining comments
   const beginLoadMoreEvent = useViewerNetworkEvent(LoadMoreAllCommentsEvent);
   const beginViewNewCommentsEvent = useViewerNetworkEvent(
     ViewNewCommentsNetworkEvent
   );
-
-  useEffect(() => {
-    setLocal({ commentsFullyLoaded: !hasMore });
-    if (hasMore && !isLoadingMore) {
-      void loadMoreAndEmit();
-    }
-  }, []);
 
   const loadMoreAndEmit = useCallback(async () => {
     const loadMoreEvent = beginLoadMoreEvent({
@@ -264,7 +258,6 @@ export const AllCommentsTabContainer: FunctionComponent<Props> = ({
     });
     try {
       await loadMore();
-      setLocal({ commentsFullyLoaded: true });
       loadMoreEvent.success();
     } catch (error) {
       loadMoreEvent.error({ message: error.message, code: error.code });
@@ -629,7 +622,9 @@ const enhanced = withPaginationContainer<
     story: graphql`
       fragment AllCommentsTabContainer_story on Story
       @argumentDefinitions(
-        count: { type: "Int", defaultValue: 20 }
+        # this count defines the number of comments that are initially requested
+        # from GraphQL and rendered on the page
+        count: { type: "Int", defaultValue: 5 }
         cursor: { type: "Cursor" }
         orderBy: { type: "COMMENT_SORT!", defaultValue: CREATED_AT_DESC }
         tag: { type: "TAG" }
