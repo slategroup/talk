@@ -482,6 +482,10 @@ export default (ctx: GraphContext) => ({
       throw new StoryNotFoundError(comment.storyID);
     }
 
+    // does this determine whether we keep querying for all comments on load?
+    // no doesn't seem to do anything
+    console.log('allChildComments retrieving all child comments (9999)')
+
     const cacheAvailable = await ctx.cache.available(ctx.tenant.id);
     if (!cacheAvailable) {
       return retrieveChildrenForParentConnection(
@@ -489,7 +493,7 @@ export default (ctx: GraphContext) => ({
         ctx.tenant.id,
         comment,
         {
-          first: 9999,
+          first: 9999, // dev here 9999
           orderBy: defaultTo(orderBy, GQLCOMMENT_SORT.CREATED_AT_ASC),
         },
         story.isArchived
