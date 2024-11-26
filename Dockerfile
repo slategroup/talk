@@ -1,6 +1,6 @@
 FROM node:18-alpine
 
-ENV NODE_OPTIONS="--max-old-space-size=8192 --openssl-legacy-provider --no-experimental-fetch"
+ENV NODE_OPTIONS="--max-old-space-size=30480 --openssl-legacy-provider --no-experimental-fetch"
 
 # Install build dependancies.
 RUN apk --no-cache --update add g++ make git python3 py3-pip py3-setuptools \

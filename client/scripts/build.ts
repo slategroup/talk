@@ -22,6 +22,7 @@ import createWebpackConfig from "../src/core/build/createWebpackConfig";
 process.env.WEBPACK = "true";
 process.env.NODE_ENV = process.env.NODE_ENV || "production";
 process.env.BABEL_ENV = process.env.NODE_ENV;
+process.env.NODE_OPTIONS = "--max_old_space_size=40096";
 
 // Enforce environment to be NODE_ENV.
 config.validate().set("env", process.env.NODE_ENV);
