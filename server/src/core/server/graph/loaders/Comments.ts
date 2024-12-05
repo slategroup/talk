@@ -50,6 +50,9 @@ import {
 
 import { requiredPropertyFilter, sectionFilter } from "./helpers";
 import { SingletonResolver } from "./util";
+import config from "coral-server/config";
+
+const paginationCountThreshold = config.get("pagination_count_threshold");
 
 const tagFilter = (tag?: GQLTAG): CommentConnectionInput["filter"] => {
   if (tag) {
@@ -332,6 +335,9 @@ export default (ctx: GraphContext) => ({
       isArchived
     ).then(primeCommentsFromConnection(ctx));
   },
+  // forStory retrieves the initial set of comments for a given story.
+  // depending on the number of comments, it will either retrieve the entire set
+  // of comments or a subset that can then be paginated through.
   forStory: async (
     storyID: string,
     { first, orderBy, after, tag, rating, refreshStream }: StoryToCommentsArgs
@@ -341,14 +347,26 @@ export default (ctx: GraphContext) => ({
       throw new StoryNotFoundError(storyID);
     }
 
+    const totalCommentsCount = story.commentCounts.tags.total;
+    const usePagination = totalCommentsCount > paginationCountThreshold;
     const isArchived = !!(story.isArchived || story.isArchiving);
     const cacheAvailable = await ctx.cache.available(ctx.tenant.id);
+
+    // the following code
+
+    // regardless of cacheAvailable, we want to paginate the first call to prevent loading all comments at once
+    // subsequent calls (for more is 15 comments) should retrieve from cache if the totalComments are fewer than 500
+    // and should paginate via mongo if the totalComments are greater than 500
+
+    // if the story is archived or has a relatively large number of comments,
+    // comments will be paginated via queries to Mongo
 
     if (
       !cacheAvailable ||
       isRatingsAndReviews(ctx.tenant, story) ||
       isQA(ctx.tenant, story) ||
-      isArchived
+      isArchived ||
+      usePagination
     ) {
       const connection = await retrieveCommentStoryConnection(
         ctx.mongo,
@@ -371,6 +389,9 @@ export default (ctx: GraphContext) => ({
 
       return connection;
     }
+
+    // if the story is not archived and has a relatively small number of comments, we will
+    // retrieve all comments from the cache (which will fallback to Mongo if comments are not cached)
 
     const primeResult = await ctx.cache.comments.primeCommentsForStory(
       ctx.tenant.id,
@@ -489,7 +510,7 @@ export default (ctx: GraphContext) => ({
         ctx.tenant.id,
         comment,
         {
-          first: 9999,
+          first: 9999, // seems like lowering this doesn't help reduce Redis operations
           orderBy: defaultTo(orderBy, GQLCOMMENT_SORT.CREATED_AT_ASC),
         },
         story.isArchived

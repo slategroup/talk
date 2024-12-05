@@ -244,13 +244,16 @@ export const AllCommentsTabContainer: FunctionComponent<Props> = ({
   );
 
   const commentSeenEnabled = useCommentSeenEnabled();
-  // calling loadMore will query GraphQL for 20 more comments
-  const [loadMore, isLoadingMore] = useLoadMore(relay, 20); // 99999 instead of 20 will effectively load all remaining comments
+  // calling loadMore will query GraphQL for 10 more comments
+  // (at the time of this writing, pagination queries are quite slow
+  // and values higher than 10 sometimes take as long as 10 seconds)
+  const [loadMore, isLoadingMore] = useLoadMore(relay, 10);
   const beginLoadMoreEvent = useViewerNetworkEvent(LoadMoreAllCommentsEvent);
   const beginViewNewCommentsEvent = useViewerNetworkEvent(
     ViewNewCommentsNetworkEvent
   );
 
+  // this is called whenever user clicks 'Load More' button
   const loadMoreAndEmit = useCallback(async () => {
     const loadMoreEvent = beginLoadMoreEvent({
       storyID: story.id,
@@ -622,9 +625,10 @@ const enhanced = withPaginationContainer<
     story: graphql`
       fragment AllCommentsTabContainer_story on Story
       @argumentDefinitions(
-        # this count defines the number of comments that are initially requested
-        # from GraphQL and rendered on the page
-        count: { type: "Int", defaultValue: 5 }
+        # in the case that pagination is toggled on, this count defines
+        # the number of comments that are initially requested from GraphQL and rendered on the page
+        # the count value belowmust be changed in tandem with NUM_INITIAL_COMMENTS in constants.ts
+        count: { type: "Int", defaultValue: 10 }
         cursor: { type: "Cursor" }
         orderBy: { type: "COMMENT_SORT!", defaultValue: CREATED_AT_DESC }
         tag: { type: "TAG" }

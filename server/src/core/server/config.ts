@@ -505,6 +505,12 @@ const config = convict({
     default: ms("3000s"),
     env: "NOTIFICATIONS_POLL_RATE",
   },
+  pagination_count_threshold: {
+    doc: "the threshold number of comments above which pagination will be enabled",
+    format: Number,
+    default: 500,
+    env: "PAGINATION_COUNT_THRESHOLD",
+  }
 });
 
 export type Config = typeof config;

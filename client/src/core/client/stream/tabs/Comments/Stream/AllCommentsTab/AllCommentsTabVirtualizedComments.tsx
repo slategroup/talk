@@ -1,5 +1,4 @@
 import { Localized } from "@fluent/react/compat";
-import cn from "classnames";
 import React, { FunctionComponent, useCallback, useMemo } from "react";
 import { graphql } from "react-relay";
 import { Virtuoso } from "react-virtuoso";
@@ -20,8 +19,6 @@ import { COMMENT_SORT } from "coral-stream/__generated__/AllCommentsTabContainer
 import { AllCommentsTabVirtualizedCommentsLocal } from "coral-stream/__generated__/AllCommentsTabVirtualizedCommentsLocal.graphql";
 
 import AllCommentsTabCommentContainer from "./AllCommentsTabCommentContainer";
-
-import styles from "./AllCommentsTabVirtualizedComments.css";
 
 interface Props {
   settings: AllCommentsTabContainer_settings;
@@ -145,8 +142,12 @@ const AllCommentsTabVirtualizedComments: FunctionComponent<Props> = ({
   const Footer = useCallback(() => {
     return (
       <>
-        {showLoadMoreForOldestFirstNewComments && (
-          <Localized id="comments-loadMore">
+        {(displayLoadAllButton || showLoadMoreForOldestFirstNewComments) && (
+          <Localized
+            id={
+              isLoadingMore ? "comments-loadAll-loading" : "comments-loadMore"
+            }
+          >
             <Button
               key={`comments-loadMore-${comments.length}`}
               id="comments-loadMore"
@@ -157,35 +158,6 @@ const AllCommentsTabVirtualizedComments: FunctionComponent<Props> = ({
               disabled={isLoadingMore}
               aria-controls="comments-allComments-log"
               className={CLASSES.allCommentsTabPane.loadMoreButton}
-              // Added for keyboard shortcut support.
-              data-key-stop
-              data-is-load-more
-            >
-              Load More
-            </Button>
-          </Localized>
-        )}
-        {displayLoadAllButton && (
-          <Localized
-            id={
-              loadAllButtonDisabled
-                ? "comments-loadAll-loading"
-                : "comments-loadMore"
-            }
-          >
-            <Button
-              key={`comments-loadAll-${comments.length}`}
-              id="comments-loadAll"
-              onClick={loadMoreAndEmit}
-              color="secondary"
-              variant="outlined"
-              fullWidth
-              disabled={!!loadAllButtonDisabled}
-              aria-controls="comments-allComments-log"
-              className={cn(
-                CLASSES.allCommentsTabPane.loadMoreButton,
-                styles.loadAll
-              )}
               // Added for keyboard shortcut support.
               data-key-stop
               data-is-load-more
