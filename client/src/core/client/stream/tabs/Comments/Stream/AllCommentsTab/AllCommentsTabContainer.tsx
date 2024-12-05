@@ -244,19 +244,17 @@ export const AllCommentsTabContainer: FunctionComponent<Props> = ({
   );
 
   const commentSeenEnabled = useCommentSeenEnabled();
-  const [loadMore, isLoadingMore] = useLoadMore(relay, 99999);
+  // calling loadMore will query GraphQL for 10 more comments
+  // (at the time of this writing, pagination queries are quite slow
+  // and values higher than 10 sometimes take as long as 10 seconds),
+  // depending on how many comment replies must be recursively fetched
+  const [loadMore, isLoadingMore] = useLoadMore(relay, 10);
   const beginLoadMoreEvent = useViewerNetworkEvent(LoadMoreAllCommentsEvent);
   const beginViewNewCommentsEvent = useViewerNetworkEvent(
     ViewNewCommentsNetworkEvent
   );
 
-  useEffect(() => {
-    setLocal({ commentsFullyLoaded: !hasMore });
-    if (hasMore && !isLoadingMore) {
-      void loadMoreAndEmit();
-    }
-  }, []);
-
+  // this is called whenever user clicks 'Load More' button
   const loadMoreAndEmit = useCallback(async () => {
     const loadMoreEvent = beginLoadMoreEvent({
       storyID: story.id,
@@ -264,7 +262,6 @@ export const AllCommentsTabContainer: FunctionComponent<Props> = ({
     });
     try {
       await loadMore();
-      setLocal({ commentsFullyLoaded: true });
       loadMoreEvent.success();
     } catch (error) {
       loadMoreEvent.error({ message: error.message, code: error.code });
@@ -629,7 +626,10 @@ const enhanced = withPaginationContainer<
     story: graphql`
       fragment AllCommentsTabContainer_story on Story
       @argumentDefinitions(
-        count: { type: "Int", defaultValue: 20 }
+        # in the case that pagination is toggled on, this count defines
+        # the number of comments that are initially requested from GraphQL and rendered on the page
+        # the count value belowmust be changed in tandem with NUM_INITIAL_COMMENTS in constants.ts
+        count: { type: "Int", defaultValue: 10 }
         cursor: { type: "Cursor" }
         orderBy: { type: "COMMENT_SORT!", defaultValue: CREATED_AT_DESC }
         tag: { type: "TAG" }

@@ -4328,7 +4328,7 @@ Comment is a comment left by a [User](/api/types/objects/User) on an
 [Story](/api/types/objects/Story) or another [Comment](/api/types/objects/Comment)
 as a reply.
 """
-type Comment @cacheControl(maxAge: 5) {
+type Comment @cacheControl(maxAge: 30) {
   """
   id is the identifier of the [Comment](/api/types/objects/Comment).
   """
