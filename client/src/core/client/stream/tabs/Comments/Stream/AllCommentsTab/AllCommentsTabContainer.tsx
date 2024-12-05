@@ -246,7 +246,8 @@ export const AllCommentsTabContainer: FunctionComponent<Props> = ({
   const commentSeenEnabled = useCommentSeenEnabled();
   // calling loadMore will query GraphQL for 10 more comments
   // (at the time of this writing, pagination queries are quite slow
-  // and values higher than 10 sometimes take as long as 10 seconds)
+  // and values higher than 10 sometimes take as long as 10 seconds),
+  // depending on how many comment replies must be recursively fetched
   const [loadMore, isLoadingMore] = useLoadMore(relay, 10);
   const beginLoadMoreEvent = useViewerNetworkEvent(LoadMoreAllCommentsEvent);
   const beginViewNewCommentsEvent = useViewerNetworkEvent(

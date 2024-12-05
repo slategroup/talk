@@ -352,15 +352,8 @@ export default (ctx: GraphContext) => ({
     const isArchived = !!(story.isArchived || story.isArchiving);
     const cacheAvailable = await ctx.cache.available(ctx.tenant.id);
 
-    // the following code
-
-    // regardless of cacheAvailable, we want to paginate the first call to prevent loading all comments at once
-    // subsequent calls (for more is 15 comments) should retrieve from cache if the totalComments are fewer than 500
-    // and should paginate via mongo if the totalComments are greater than 500
-
-    // if the story is archived or has a relatively large number of comments,
-    // comments will be paginated via queries to Mongo
-
+    // Regardless of cacheAvailable (true when DATA_CACHE is enabled),
+    // we want to conditionally paginate the first call to prevent loading too many comments at once.
     if (
       !cacheAvailable ||
       isRatingsAndReviews(ctx.tenant, story) ||
@@ -510,7 +503,7 @@ export default (ctx: GraphContext) => ({
         ctx.tenant.id,
         comment,
         {
-          first: 9999, // seems like lowering this doesn't help reduce Redis operations
+          first: 9999,
           orderBy: defaultTo(orderBy, GQLCOMMENT_SORT.CREATED_AT_ASC),
         },
         story.isArchived
