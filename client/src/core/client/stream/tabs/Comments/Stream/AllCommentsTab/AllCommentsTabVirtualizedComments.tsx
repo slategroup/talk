@@ -1,5 +1,4 @@
 import { Localized } from "@fluent/react/compat";
-import cn from "classnames";
 import React, { FunctionComponent, useCallback, useMemo } from "react";
 import { graphql } from "react-relay";
 import { Virtuoso } from "react-virtuoso";
@@ -20,8 +19,6 @@ import { COMMENT_SORT } from "coral-stream/__generated__/AllCommentsTabContainer
 import { AllCommentsTabVirtualizedCommentsLocal } from "coral-stream/__generated__/AllCommentsTabVirtualizedCommentsLocal.graphql";
 
 import AllCommentsTabCommentContainer from "./AllCommentsTabCommentContainer";
-
-import styles from "./AllCommentsTabVirtualizedComments.css";
 
 interface Props {
   settings: AllCommentsTabContainer_settings;
@@ -82,10 +79,11 @@ const AllCommentsTabVirtualizedComments: FunctionComponent<Props> = ({
     const commentsOnLoad = { length: comments.length, hasMore };
     const commentsOnLoadLessThanInitialComments =
       commentsOnLoad.length < NUM_INITIAL_COMMENTS;
+
     return commentsOnLoadLessThanInitialComments
       ? false
       : commentsOnLoad.hasMore;
-  }, []);
+  }, [hasMore]); // watching for changes on hasMore to determine whether the Load More button should render
 
   // We determine whether to display the Load all comments button based on whether:
   // 1. If there are more comments to display than 20 AND fewer than 20 weren't initially loaded.
@@ -144,8 +142,12 @@ const AllCommentsTabVirtualizedComments: FunctionComponent<Props> = ({
   const Footer = useCallback(() => {
     return (
       <>
-        {showLoadMoreForOldestFirstNewComments && (
-          <Localized id="comments-loadMore">
+        {(displayLoadAllButton || showLoadMoreForOldestFirstNewComments) && (
+          <Localized
+            id={
+              isLoadingMore ? "comments-loadAll-loading" : "comments-loadMore"
+            }
+          >
             <Button
               key={`comments-loadMore-${comments.length}`}
               id="comments-loadMore"
@@ -161,35 +163,6 @@ const AllCommentsTabVirtualizedComments: FunctionComponent<Props> = ({
               data-is-load-more
             >
               Load More
-            </Button>
-          </Localized>
-        )}
-        {displayLoadAllButton && (
-          <Localized
-            id={
-              loadAllButtonDisabled
-                ? "comments-loadAll-loading"
-                : "comments-loadAll"
-            }
-          >
-            <Button
-              key={`comments-loadAll-${comments.length}`}
-              id="comments-loadAll"
-              onClick={onDisplayLoadAllButtonClick}
-              color="secondary"
-              variant="outlined"
-              fullWidth
-              disabled={!!loadAllButtonDisabled}
-              aria-controls="comments-allComments-log"
-              className={cn(
-                CLASSES.allCommentsTabPane.loadMoreButton,
-                styles.loadAll
-              )}
-              // Added for keyboard shortcut support.
-              data-key-stop
-              data-is-load-more
-            >
-              Load All Comments
             </Button>
           </Localized>
         )}
@@ -222,11 +195,7 @@ const AllCommentsTabVirtualizedComments: FunctionComponent<Props> = ({
           top: increaseViewportBy,
           bottom: increaseViewportBy,
         }}
-        totalCount={
-          displayLoadAllButton
-            ? NUM_INITIAL_COMMENTS + newCommentsLength
-            : comments.length
-        }
+        totalCount={comments.length} // always render new comments as they get returned from GraphQL
         overscan={overscan}
         itemContent={useCallback(
           (index: number) => {
