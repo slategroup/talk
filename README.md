@@ -1,3 +1,7 @@
+# Welcome to Slate's fork of Coral! For wiki entries concerning this repo, see:
+- https://github.com/slategroup/slate-web/wiki/Comments-with-Coral-Talk
+- https://github.com/slategroup/slate-web/wiki/Setting-Up-Coral-(Comments)-Locally
+
 <p align="center">
   <a href="https://coralproject.net" target="_blank"><img width="250" src="https://docs.coralproject.net/img/coralproject_by_voxmedia.svg" alt="Coral by Vox Media" /></a>
 </p>

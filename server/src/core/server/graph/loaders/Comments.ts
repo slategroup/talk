@@ -50,6 +50,9 @@ import {
 
 import { requiredPropertyFilter, sectionFilter } from "./helpers";
 import { SingletonResolver } from "./util";
+import config from "coral-server/config";
+
+const paginationCountThreshold = config.get("pagination_count_threshold");
 
 const tagFilter = (tag?: GQLTAG): CommentConnectionInput["filter"] => {
   if (tag) {
@@ -332,6 +335,9 @@ export default (ctx: GraphContext) => ({
       isArchived
     ).then(primeCommentsFromConnection(ctx));
   },
+  // forStory retrieves the initial set of comments for a given story.
+  // depending on the number of comments, it will either retrieve the entire set
+  // of comments or a subset that can then be paginated through.
   forStory: async (
     storyID: string,
     { first, orderBy, after, tag, rating, refreshStream }: StoryToCommentsArgs
@@ -341,14 +347,19 @@ export default (ctx: GraphContext) => ({
       throw new StoryNotFoundError(storyID);
     }
 
+    const totalCommentsCount = story.commentCounts.tags.total;
+    const usePagination = totalCommentsCount > paginationCountThreshold;
     const isArchived = !!(story.isArchived || story.isArchiving);
     const cacheAvailable = await ctx.cache.available(ctx.tenant.id);
 
+    // Regardless of cacheAvailable (true when DATA_CACHE is enabled),
+    // we want to conditionally paginate the first call to prevent loading too many comments at once.
     if (
       !cacheAvailable ||
       isRatingsAndReviews(ctx.tenant, story) ||
       isQA(ctx.tenant, story) ||
-      isArchived
+      isArchived ||
+      usePagination
     ) {
       const connection = await retrieveCommentStoryConnection(
         ctx.mongo,
@@ -371,6 +382,9 @@ export default (ctx: GraphContext) => ({
 
       return connection;
     }
+
+    // if the story is not archived and has a relatively small number of comments, we will
+    // retrieve all comments from the cache (which will fallback to Mongo if comments are not cached)
 
     const primeResult = await ctx.cache.comments.primeCommentsForStory(
       ctx.tenant.id,
