@@ -347,7 +347,7 @@ export default (ctx: GraphContext) => ({
       throw new StoryNotFoundError(storyID);
     }
 
-    const totalCommentsCount = story.commentCounts.tags.total;
+    const totalCommentsCount = story.commentCounts.status.APPROVED + story.commentCounts.status.NONE;
     const usePagination = totalCommentsCount > paginationCountThreshold;
     const isArchived = !!(story.isArchived || story.isArchiving);
     const cacheAvailable = await ctx.cache.available(ctx.tenant.id);
